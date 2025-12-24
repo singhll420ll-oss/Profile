@@ -10,7 +10,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# ---------------- RENDER PROXY FIX (FIX 400 BAD REQUEST) ----------------
+# ---------------- RENDER PROXY FIX ----------------
 app.wsgi_app = ProxyFix(
     app.wsgi_app,
     x_for=1,
@@ -20,13 +20,18 @@ app.wsgi_app = ProxyFix(
 )
 
 # ---------------- SECRET KEY ----------------
-# Make sure SECRET_KEY is set in Render ENV
-app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "yaha-pe-secret-key-dalo"   # ⬅⬅⬅ YAHI PE FILL KARO
+)
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
     return psycopg.connect(
-        os.getenv("DATABASE_URL"),
+        os.getenv(
+            "DATABASE_URL",
+            "yaha-pe-database-url-dalo"  # ⬅⬅⬅ YAHI PE FILL KARO
+        ),
         sslmode="require"
     )
 
@@ -60,11 +65,7 @@ def home():
 def login():
     if request.method == 'POST':
         mobile = request.form.get('mobile_number')
-        password = request.form.get('password')
-
-        if not mobile or not password:
-            flash("All fields are required", "error")
-            return render_template('login.html')
+        password = hash_password(request.form.get('password'))
 
         try:
             with get_db_connection() as conn:
@@ -73,7 +74,7 @@ def login():
                         SELECT id, mobile, name, email, address
                         FROM users
                         WHERE mobile = %s AND password = %s
-                    """, (mobile, hash_password(password)))
+                    """, (mobile, password))
                     user = cur.fetchone()
 
             if user:
@@ -82,6 +83,7 @@ def login():
                 session['name'] = user[2]
                 session['email'] = user[3]
                 session['address'] = user[4]
+
                 flash("Login successful", "success")
                 return redirect(url_for('profile'))
 
@@ -96,6 +98,7 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+
         if request.form.get('password') != request.form.get('confirm_password'):
             flash("Passwords do not match", "error")
             return render_template('register.html')
@@ -121,6 +124,7 @@ def register():
                         request.form.get('address'),
                         hash_password(request.form.get('password'))
                     ))
+
                     user_id = cur.fetchone()[0]
                 conn.commit()
 
