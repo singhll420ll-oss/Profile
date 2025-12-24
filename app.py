@@ -46,21 +46,24 @@ def hash_password(password: str) -> str:
 # ---------------- ROUTES ----------------
 @app.route('/')
 def home():
-    if 'user_id' in session:
-        return redirect(url_for('profile'))
-    return redirect(url_for('login'))
+    return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
 
+# ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile = request.form['mobile']
+        mobile = request.form['mobile_number']   # ✅ FIXED
         password = hash_password(request.form['password'])
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, mobile, name, email, address FROM users WHERE mobile=%s AND password=%s",
+                        """
+                        SELECT id, mobile, name, email, address
+                        FROM users
+                        WHERE mobile = %s AND password = %s
+                        """,
                         (mobile, password)
                     )
                     user = cur.fetchone()
@@ -74,14 +77,15 @@ def login():
 
                 flash("Login successful", "success")
                 return redirect(url_for('profile'))
-            else:
-                flash("Invalid mobile or password", "error")
+
+            flash("Invalid mobile or password", "error")
 
         except Exception as e:
             flash(str(e), "error")
 
     return render_template('login.html')
 
+# ---------------- REGISTER ----------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -90,12 +94,14 @@ def register():
             flash("Passwords do not match", "error")
             return render_template('register.html')
 
+        mobile = request.form['mobile_number']   # ✅ FIXED
+
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id FROM users WHERE mobile=%s",
-                        (request.form['mobile'],)
+                        "SELECT id FROM users WHERE mobile = %s",
+                        (mobile,)
                     )
                     if cur.fetchone():
                         flash("Mobile already registered", "error")
@@ -107,17 +113,17 @@ def register():
                         RETURNING id
                     """, (
                         request.form['name'],
-                        request.form['mobile'],
+                        mobile,
                         request.form['email'],
                         request.form['address'],
                         hash_password(request.form['password'])
                     ))
 
                     user_id = cur.fetchone()[0]
-                    conn.commit()
+                conn.commit()
 
             session['user_id'] = user_id
-            session['mobile'] = request.form['mobile']
+            session['mobile'] = mobile
             session['name'] = request.form['name']
             session['email'] = request.form['email']
             session['address'] = request.form['address']
@@ -130,12 +136,14 @@ def register():
 
     return render_template('register.html')
 
+# ---------------- PROFILE ----------------
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('profile.html')
 
+# ---------------- EDIT PROFILE ----------------
 @app.route('/edit-profile', methods=['GET', 'POST'])
 def edit_profile():
     if 'user_id' not in session:
@@ -169,12 +177,14 @@ def edit_profile():
 
     return render_template('edit_profile.html')
 
+# ---------------- LOGOUT ----------------
 @app.route('/logout')
 def logout():
     session.clear()
     flash("Logged out successfully", "success")
     return redirect(url_for('login'))
 
+# ---------------- HEALTH CHECK ----------------
 @app.route('/check-status')
 def check_status():
     try:
