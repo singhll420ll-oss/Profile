@@ -9,22 +9,23 @@ import hashlib
 load_dotenv()
 
 app = Flask(__name__)
+
+# Flask session config
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 Session(app)
 
-# Database connection function
+# -------------------- DATABASE --------------------
+
 def get_db_connection():
     DATABASE_URL = os.getenv(
         'DATABASE_URL',
-        'postgresql://bite_me_buddy_user:6Mb7axQ89EkOQTQnqw6shT5CaO2lFY1Z@dpg-d536f8khg0os738kuhm0-a/bite_me_buddy'
+        'postgresql://bite_me_buddy_user:password@host/dbname'
     )
+    return psycopg.connect(DATABASE_URL, sslmode="require")
 
-    conn = psycopg.connect(DATABASE_URL, sslmode="require")
-    return conn
 
-# Create users table if not exists
 def create_tables():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -41,29 +42,29 @@ def create_tables():
             """)
         conn.commit()
 
-# Hash password function
-def hash_password(password):
+
+def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+# -------------------- ROUTES --------------------
 
 @app.route('/')
 def home():
-    if 'user_id' in session:
-        return redirect(url_for('profile'))
-    return redirect(url_for('login'))
+    return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile_number = request.form['mobile_number']
-        password = request.form['password']
-        hashed_password = hash_password(password)
+        mobile = request.form['mobile_number']
+        password = hash_password(request.form['password'])
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT * FROM users WHERE mobile_number = %s AND password = %s",
-                        (mobile_number, hashed_password)
+                        "SELECT * FROM users WHERE mobile_number=%s AND password=%s",
+                        (mobile, password)
                     )
                     user = cur.fetchone()
 
@@ -73,65 +74,64 @@ def login():
                 session['name'] = user[3]
                 session['email'] = user[4]
                 session['address'] = user[5]
-                flash('Login successful!', 'success')
+                flash("Login successful", "success")
                 return redirect(url_for('profile'))
             else:
-                flash('Invalid mobile number or password', 'error')
+                flash("Invalid credentials", "error")
 
         except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
+            flash(str(e), "error")
 
     return render_template('login.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
-        mobile_number = request.form['mobile_number']
-        email = request.form['email']
-        address = request.form['address']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
+        if request.form['password'] != request.form['confirm_password']:
+            flash("Passwords do not match", "error")
             return render_template('register.html')
-
-        hashed_password = hash_password(password)
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id FROM users WHERE mobile_number = %s",
-                        (mobile_number,)
+                        "SELECT id FROM users WHERE mobile_number=%s",
+                        (request.form['mobile_number'],)
                     )
                     if cur.fetchone():
-                        flash('Mobile number already registered', 'error')
+                        flash("Mobile already registered", "error")
                         return render_template('register.html')
 
                     cur.execute("""
                         INSERT INTO users (name, mobile_number, email, address, password)
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (%s,%s,%s,%s,%s)
                         RETURNING id
-                    """, (name, mobile_number, email, address, hashed_password))
+                    """, (
+                        request.form['name'],
+                        request.form['mobile_number'],
+                        request.form['email'],
+                        request.form['address'],
+                        hash_password(request.form['password'])
+                    ))
 
                     user_id = cur.fetchone()[0]
                     conn.commit()
 
             session['user_id'] = user_id
-            session['mobile_number'] = mobile_number
-            session['name'] = name
-            session['email'] = email
-            session['address'] = address
+            session['mobile_number'] = request.form['mobile_number']
+            session['name'] = request.form['name']
+            session['email'] = request.form['email']
+            session['address'] = request.form['address']
 
-            flash('Registration successful!', 'success')
+            flash("Registration successful", "success")
             return redirect(url_for('profile'))
 
         except Exception as e:
-            flash(f'Registration failed: {str(e)}', 'error')
+            flash(str(e), "error")
 
     return render_template('register.html')
+
 
 @app.route('/profile')
 def profile():
@@ -141,15 +141,16 @@ def profile():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT name, mobile_number, email, address FROM users WHERE id = %s",
+                "SELECT name,mobile_number,email,address FROM users WHERE id=%s",
                 (session['user_id'],)
             )
-            user_data = cur.fetchone()
+            user = cur.fetchone()
 
-    if user_data:
-        session['name'], session['mobile_number'], session['email'], session['address'] = user_data
+    if user:
+        session['name'], session['mobile_number'], session['email'], session['address'] = user
 
     return render_template('profile.html')
+
 
 @app.route('/edit-profile', methods=['GET', 'POST'])
 def edit_profile():
@@ -157,36 +158,40 @@ def edit_profile():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        address = request.form['address']
-
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
                         UPDATE users
-                        SET name = %s, email = %s, address = %s
-                        WHERE id = %s
-                    """, (name, email, address, session['user_id']))
+                        SET name=%s, email=%s, address=%s
+                        WHERE id=%s
+                    """, (
+                        request.form['name'],
+                        request.form['email'],
+                        request.form['address'],
+                        session['user_id']
+                    ))
                 conn.commit()
 
-            session['name'] = name
-            session['email'] = email
-            session['address'] = address
-            flash('Profile updated successfully!', 'success')
+            session['name'] = request.form['name']
+            session['email'] = request.form['email']
+            session['address'] = request.form['address']
+
+            flash("Profile updated", "success")
             return redirect(url_for('profile'))
 
         except Exception as e:
-            flash(f'Update failed: {str(e)}', 'error')
+            flash(str(e), "error")
 
     return render_template('edit_profile.html')
+
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('Logged out successfully', 'success')
+    flash("Logged out", "success")
     return redirect(url_for('login'))
+
 
 @app.route('/check-status')
 def check_status():
@@ -196,11 +201,16 @@ def check_status():
                 cur.execute("SELECT 1")
         return "Database connection successful!"
     except Exception as e:
-        return f"Database connection failed: {str(e)}"
+        return f"Database error: {e}"
 
-@app.before_first_request
-def initialize():
+
+# -------------------- INIT (Flask 2.3+ SAFE) --------------------
+
+with app.app_context():
     create_tables()
+
+
+# -------------------- RUN --------------------
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
