@@ -6,26 +6,40 @@
         <div class="card">
             <div class="card-body p-5">
                 <h2 class="text-center mb-4">Login</h2>
+
                 <form method="POST" action="{{ url_for('login') }}">
+
                     <div class="mb-3">
-                        <label for="mobile_number" class="form-label">Mobile Number</label>
-                        <input type="tel" class="form-control" id="mobile_number" name="mobile_number" 
-                               pattern="[0-9]{10}" required placeholder="Enter 10-digit mobile number">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel"
+                               class="form-control"
+                               name="mobile"
+                               pattern="[0-9]{10}"
+                               required
+                               placeholder="Enter 10-digit mobile number">
                     </div>
-                    
+
                     <div class="mb-4">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" 
-                               required placeholder="Enter your password">
+                        <label class="form-label">Password</label>
+                        <input type="password"
+                               class="form-control"
+                               name="password"
+                               required
+                               placeholder="Enter your password">
                     </div>
-                    
+
                     <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Login
+                        </button>
                     </div>
-                    
+
                     <div class="text-center">
-                        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+                        <p>Don't have an account?
+                            <a href="{{ url_for('register') }}">Register here</a>
+                        </p>
                     </div>
+
                 </form>
             </div>
         </div>
