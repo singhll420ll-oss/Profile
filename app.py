@@ -46,7 +46,9 @@ def hash_password(password: str) -> str:
 # ---------------- ROUTES ----------------
 @app.route('/')
 def home():
-    return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
+    if 'user_id' in session:
+        return redirect(url_for('profile'))
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -64,11 +66,16 @@ def login():
                     user = cur.fetchone()
 
             if user:
-                session['user_id'], session['mobile'], session['name'], session['email'], session['address'] = user
+                session['user_id'] = user[0]
+                session['mobile'] = user[1]
+                session['name'] = user[2]
+                session['email'] = user[3]
+                session['address'] = user[4]
+
                 flash("Login successful", "success")
                 return redirect(url_for('profile'))
             else:
-                flash("Invalid credentials", "error")
+                flash("Invalid mobile or password", "error")
 
         except Exception as e:
             flash(str(e), "error")
@@ -78,6 +85,7 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+
         if request.form['password'] != request.form['confirm_password']:
             flash("Passwords do not match", "error")
             return render_template('register.html')
@@ -95,7 +103,7 @@ def register():
 
                     cur.execute("""
                         INSERT INTO users (name, mobile, email, address, password)
-                        VALUES (%s,%s,%s,%s,%s)
+                        VALUES (%s, %s, %s, %s, %s)
                         RETURNING id
                     """, (
                         request.form['name'],
@@ -108,13 +116,11 @@ def register():
                     user_id = cur.fetchone()[0]
                     conn.commit()
 
-            session.update({
-                'user_id': user_id,
-                'mobile': request.form['mobile'],
-                'name': request.form['name'],
-                'email': request.form['email'],
-                'address': request.form['address']
-            })
+            session['user_id'] = user_id
+            session['mobile'] = request.form['mobile']
+            session['name'] = request.form['name']
+            session['email'] = request.form['email']
+            session['address'] = request.form['address']
 
             flash("Registration successful", "success")
             return redirect(url_for('profile'))
@@ -128,7 +134,6 @@ def register():
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
     return render_template('profile.html')
 
 @app.route('/edit-profile', methods=['GET', 'POST'])
@@ -167,7 +172,7 @@ def edit_profile():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash("Logged out", "success")
+    flash("Logged out successfully", "success")
     return redirect(url_for('login'))
 
 @app.route('/check-status')
