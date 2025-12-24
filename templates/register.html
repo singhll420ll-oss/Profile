@@ -6,54 +6,80 @@
         <div class="card">
             <div class="card-body p-5">
                 <h2 class="text-center mb-4">Create Account</h2>
+
                 <form method="POST" action="{{ url_for('register') }}">
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="name" name="name" 
-                                   required placeholder="Enter your full name">
+                            <label class="form-label">Full Name</label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="name"
+                                   required
+                                   placeholder="Enter your full name">
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="mobile_number" class="form-label">Mobile Number</label>
-                            <input type="tel" class="form-control" id="mobile_number" name="mobile_number" 
-                                   pattern="[0-9]{10}" required placeholder="10-digit number">
+                            <label class="form-label">Mobile Number</label>
+                            <input type="tel"
+                                   class="form-control"
+                                   name="mobile"
+                                   pattern="[0-9]{10}"
+                                   required
+                                   placeholder="10-digit number">
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" 
-                               required placeholder="Enter your email">
+                        <label class="form-label">Email Address</label>
+                        <input type="email"
+                               class="form-control"
+                               name="email"
+                               required
+                               placeholder="Enter your email">
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="address" class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" 
-                                  rows="3" required placeholder="Enter your address"></textarea>
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control"
+                                  name="address"
+                                  rows="3"
+                                  required
+                                  placeholder="Enter your address"></textarea>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" 
-                                   required placeholder="Create password">
+                            <label class="form-label">Password</label>
+                            <input type="password"
+                                   class="form-control"
+                                   name="password"
+                                   required
+                                   placeholder="Create password">
                         </div>
-                        
+
                         <div class="col-md-6 mb-4">
-                            <label for="confirm_password" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirm_password" 
-                                   name="confirm_password" required placeholder="Confirm password">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password"
+                                   class="form-control"
+                                   name="confirm_password"
+                                   required
+                                   placeholder="Confirm password">
                         </div>
                     </div>
-                    
+
                     <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Register
+                        </button>
                     </div>
-                    
+
                     <div class="text-center">
-                        <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                        <p>Already have an account?
+                            <a href="{{ url_for('login') }}">Login here</a>
+                        </p>
                     </div>
+
                 </form>
             </div>
         </div>
