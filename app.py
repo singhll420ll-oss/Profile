@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg
 import os
@@ -20,11 +19,8 @@ app.wsgi_app = ProxyFix(
     x_port=1
 )
 
-# ---------------- SESSION CONFIG ----------------
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-Session(app)
+# ---------------- SECRET KEY ----------------
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
@@ -62,24 +58,26 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile = request.form['mobile_number']
-        password = hash_password(request.form['password'])
+        mobile = request.form.get('mobile_number')
+        password = hash_password(request.form.get('password'))
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        """
+                    cur.execute("""
                         SELECT id, mobile, name, email, address
                         FROM users
                         WHERE mobile = %s AND password = %s
-                        """,
-                        (mobile, password)
-                    )
+                    """, (mobile, password))
                     user = cur.fetchone()
 
             if user:
-                session['user_id'], session['mobile'], session['name'], session['email'], session['address'] = user
+                session['user_id'] = user[0]
+                session['mobile'] = user[1]
+                session['name'] = user[2]
+                session['email'] = user[3]
+                session['address'] = user[4]
+
                 flash("Login successful", "success")
                 return redirect(url_for('profile'))
 
@@ -95,11 +93,11 @@ def login():
 def register():
     if request.method == 'POST':
 
-        if request.form['password'] != request.form['confirm_password']:
+        if request.form.get('password') != request.form.get('confirm_password'):
             flash("Passwords do not match", "error")
             return render_template('register.html')
 
-        mobile = request.form['mobile_number']
+        mobile = request.form.get('mobile_number')
 
         try:
             with get_db_connection() as conn:
@@ -114,23 +112,21 @@ def register():
                         VALUES (%s, %s, %s, %s, %s)
                         RETURNING id
                     """, (
-                        request.form['name'],
+                        request.form.get('name'),
                         mobile,
-                        request.form['email'],
-                        request.form['address'],
-                        hash_password(request.form['password'])
+                        request.form.get('email'),
+                        request.form.get('address'),
+                        hash_password(request.form.get('password'))
                     ))
 
                     user_id = cur.fetchone()[0]
                 conn.commit()
 
-            session.update({
-                'user_id': user_id,
-                'mobile': mobile,
-                'name': request.form['name'],
-                'email': request.form['email'],
-                'address': request.form['address']
-            })
+            session['user_id'] = user_id
+            session['mobile'] = mobile
+            session['name'] = request.form.get('name')
+            session['email'] = request.form.get('email')
+            session['address'] = request.form.get('address')
 
             flash("Registration successful", "success")
             return redirect(url_for('profile'))
