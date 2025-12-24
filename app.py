@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_session import Session
+from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg
 import os
 from dotenv import load_dotenv
@@ -9,6 +10,15 @@ import hashlib
 load_dotenv()
 
 app = Flask(__name__)
+
+# ✅ REQUIRED FOR RENDER (FIX 400 BAD REQUEST)
+app.wsgi_app = ProxyFix(
+    app.wsgi_app,
+    x_for=1,
+    x_proto=1,
+    x_host=1,
+    x_port=1
+)
 
 # ---------------- SESSION CONFIG ----------------
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
@@ -52,7 +62,7 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile = request.form['mobile_number']   # ✅ FIXED
+        mobile = request.form['mobile_number']
         password = hash_password(request.form['password'])
 
         try:
@@ -69,12 +79,7 @@ def login():
                     user = cur.fetchone()
 
             if user:
-                session['user_id'] = user[0]
-                session['mobile'] = user[1]
-                session['name'] = user[2]
-                session['email'] = user[3]
-                session['address'] = user[4]
-
+                session['user_id'], session['mobile'], session['name'], session['email'], session['address'] = user
                 flash("Login successful", "success")
                 return redirect(url_for('profile'))
 
@@ -94,15 +99,12 @@ def register():
             flash("Passwords do not match", "error")
             return render_template('register.html')
 
-        mobile = request.form['mobile_number']   # ✅ FIXED
+        mobile = request.form['mobile_number']
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT id FROM users WHERE mobile = %s",
-                        (mobile,)
-                    )
+                    cur.execute("SELECT id FROM users WHERE mobile = %s", (mobile,))
                     if cur.fetchone():
                         flash("Mobile already registered", "error")
                         return render_template('register.html')
@@ -122,11 +124,13 @@ def register():
                     user_id = cur.fetchone()[0]
                 conn.commit()
 
-            session['user_id'] = user_id
-            session['mobile'] = mobile
-            session['name'] = request.form['name']
-            session['email'] = request.form['email']
-            session['address'] = request.form['address']
+            session.update({
+                'user_id': user_id,
+                'mobile': mobile,
+                'name': request.form['name'],
+                'email': request.form['email'],
+                'address': request.form['address']
+            })
 
             flash("Registration successful", "success")
             return redirect(url_for('profile'))
@@ -142,40 +146,6 @@ def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('profile.html')
-
-# ---------------- EDIT PROFILE ----------------
-@app.route('/edit-profile', methods=['GET', 'POST'])
-def edit_profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        UPDATE users
-                        SET name=%s, email=%s, address=%s
-                        WHERE id=%s
-                    """, (
-                        request.form['name'],
-                        request.form['email'],
-                        request.form['address'],
-                        session['user_id']
-                    ))
-                conn.commit()
-
-            session['name'] = request.form['name']
-            session['email'] = request.form['email']
-            session['address'] = request.form['address']
-
-            flash("Profile updated", "success")
-            return redirect(url_for('profile'))
-
-        except Exception as e:
-            flash(str(e), "error")
-
-    return render_template('edit_profile.html')
 
 # ---------------- LOGOUT ----------------
 @app.route('/logout')
