@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile - Bite Me Buddy{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="text-center mb-4">Edit Profile</h2>
+                <form method="POST" action="{{ url_for('edit_profile') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ session.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_number" class="form-label">Mobile Number</label>
+                        <input type="text" class="form-control" id="mobile_number" 
+                               value="{{ session.mobile_number }}" readonly>
+                        <small class="text-muted">Mobile number cannot be changed</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ session.email }}" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" 
+                                  rows="4" required>{{ session.address }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
