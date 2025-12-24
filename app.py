@@ -22,7 +22,7 @@ app.wsgi_app = ProxyFix(
 # ---------------- SECRET KEY ----------------
 app.secret_key = os.getenv(
     "SECRET_KEY",
-    "yaha-pe-secret-key-dalo"   # ⬅⬅⬅ YAHI PE FILL KARO
+    "4f9ba36ac6f76ca4e0b64a1538abd079"
 )
 
 # ---------------- DATABASE ----------------
@@ -30,7 +30,7 @@ def get_db_connection():
     return psycopg.connect(
         os.getenv(
             "DATABASE_URL",
-            "yaha-pe-database-url-dalo"  # ⬅⬅⬅ YAHI PE FILL KARO
+            "postgresql://bite_me_buddy_user:6Mb7axQ89EkOQTQnqw6shT5CaO2lFY1Z@dpg-d536f8khg0os738kuhm0-a/bite_me_buddy"
         ),
         sslmode="require"
     )
