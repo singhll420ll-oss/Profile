@@ -26,7 +26,7 @@ app.secret_key = os.getenv("SECRET_KEY", "DEV_SECRET_CHANGE_ME")
 def get_db_connection():
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
-        raise Exception("DATABASE_URL not set in environment variables")
+        raise Exception("DATABASE_URL not set")
     return psycopg.connect(db_url, sslmode="require")
 
 def create_tables():
@@ -35,11 +35,11 @@ def create_tables():
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
-                    mobile VARCHAR(15) UNIQUE NOT NULL,
-                    password VARCHAR(255) NOT NULL,
                     name VARCHAR(100),
+                    mobile VARCHAR(15) UNIQUE NOT NULL,
                     email VARCHAR(100),
                     address TEXT,
+                    password VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -49,10 +49,12 @@ def create_tables():
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ---------------- ROUTES ----------------
+# ---------------- HOME ----------------
 @app.route('/')
 def home():
-    return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
+    if 'user_id' in session:
+        return redirect(url_for('profile'))
+    return redirect(url_for('login'))
 
 # ---------------- INIT DB ----------------
 @app.route('/init-db')
@@ -64,14 +66,20 @@ def init_db():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile = request.form.get('mobile')   # ✅ FIXED
-        password = hash_password(request.form.get('password'))
+        mobile = request.form.get('mobile_number')
+        password = request.form.get('password')
+
+        if not mobile or not password:
+            flash("Mobile and password required", "error")
+            return render_template('login.html')
+
+        password = hash_password(password)
 
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT id, mobile, name, email, address
+                        SELECT id, name, mobile, email, address
                         FROM users
                         WHERE mobile = %s AND password = %s
                     """, (mobile, password))
@@ -79,8 +87,8 @@ def login():
 
             if user:
                 session['user_id'] = user[0]
-                session['mobile'] = user[1]
-                session['name'] = user[2]
+                session['name'] = user[1]
+                session['mobile'] = user[2]
                 session['email'] = user[3]
                 session['address'] = user[4]
 
@@ -99,19 +107,25 @@ def login():
 def register():
     if request.method == 'POST':
 
-        if request.form.get('password') != request.form.get('confirm_password'):
-            flash("Passwords do not match", "error")
-            return render_template('register.html')
-
-        mobile = request.form.get('mobile')   # ✅ FIXED
+        name = request.form.get('name')
+        mobile = request.form.get('mobile_number')
+        email = request.form.get('email')
+        address = request.form.get('address')
+        password = request.form.get('password')
+        confirm = request.form.get('confirm_password')
 
         if not mobile:
             flash("Mobile number is required", "error")
             return render_template('register.html')
 
+        if password != confirm:
+            flash("Passwords do not match", "error")
+            return render_template('register.html')
+
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
+
                     cur.execute("SELECT id FROM users WHERE mobile = %s", (mobile,))
                     if cur.fetchone():
                         flash("Mobile already registered", "error")
@@ -121,22 +135,16 @@ def register():
                         INSERT INTO users (name, mobile, email, address, password)
                         VALUES (%s, %s, %s, %s, %s)
                         RETURNING id
-                    """, (
-                        request.form.get('name'),
-                        mobile,
-                        request.form.get('email'),
-                        request.form.get('address'),
-                        hash_password(request.form.get('password'))
-                    ))
+                    """, (name, mobile, email, address, hash_password(password)))
 
                     user_id = cur.fetchone()[0]
                 conn.commit()
 
             session['user_id'] = user_id
+            session['name'] = name
             session['mobile'] = mobile
-            session['name'] = request.form.get('name')
-            session['email'] = request.form.get('email')
-            session['address'] = request.form.get('address')
+            session['email'] = email
+            session['address'] = address
 
             flash("Registration successful", "success")
             return redirect(url_for('profile'))
