@@ -1,36 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Profile - Bite Me Buddy{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-body p-5">
+
+                <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>User Profile</h2>
                     <div>
-                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary me-2">Edit Profile</a>
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary me-2">
+                            Edit Profile
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                            Logout
+                        </a>
                     </div>
                 </div>
-                
+
                 <div class="row">
+                    <!-- Avatar -->
                     <div class="col-md-4 text-center mb-4">
                         <div class="bg-light rounded-circle p-4 d-inline-block">
-                            <h1 class="display-4 text-primary">{{ session.name[0] if session.name else 'U' }}</h1>
+                            <h1 class="display-4 text-primary">
+                                {{ session.name[0] if session.name else 'U' }}
+                            </h1>
                         </div>
                     </div>
-                    
+
+                    <!-- Details -->
                     <div class="col-md-8">
                         <div class="table-responsive">
                             <table class="table table-borderless">
                                 <tbody>
                                     <tr>
-                                        <th width="30%">Full Name:</th>
+                                        <th width="35%">Full Name:</th>
                                         <td>{{ session.name }}</td>
                                     </tr>
                                     <tr>
                                         <th>Mobile Number:</th>
-                                        <td>{{ session.mobile_number }}</td>
+                                        <td>{{ session.mobile }}</td>
                                     </tr>
                                     <tr>
                                         <th>Email Address:</th>
@@ -42,13 +53,16 @@
                                     </tr>
                                     <tr>
                                         <th>Account Status:</th>
-                                        <td><span class="badge bg-success">Active</span></td>
+                                        <td>
+                                            <span class="badge bg-success">Active</span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
