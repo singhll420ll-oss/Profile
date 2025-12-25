@@ -20,7 +20,7 @@ app.wsgi_app = ProxyFix(
 )
 
 # ---------------- SECRET KEY ----------------
-# 👉 YAHAN PE CHANGE KAR SAKTE HO (OPTIONAL)
+# 👉 YAHAN PE FILL KAR SAKTE HO YA RENDER ENV USE KARO
 app.secret_key = os.getenv(
     "SECRET_KEY",
     "YAHAN_PE_SECRET_KEY_DALO"
@@ -28,8 +28,13 @@ app.secret_key = os.getenv(
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
+    db_url = os.getenv("DATABASE_URL")
+
+    if not db_url:
+        raise Exception("DATABASE_URL missing in environment variables")
+
     return psycopg.connect(
-        os.getenv("DATABASE_URL"),
+        db_url,
         sslmode="require"
     )
 
@@ -165,7 +170,7 @@ def check_status():
     except Exception as e:
         return f"Database error: {e}"
 
-# ---------------- INIT (IMPORTANT) ----------------
+# ---------------- INIT ----------------
 create_tables()
 
 # ---------------- RUN ----------------
