@@ -19,18 +19,20 @@
                                 type="text"
                                 class="form-control"
                                 name="name"
+                                value="{{ request.form.name }}"
                                 required
                                 placeholder="Enter your full name">
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Mobile Number</label>
-                            <!-- ✅ FINAL FIX -->
+                            <!-- ✅ MUST MATCH app.py -->
                             <input
                                 type="tel"
                                 class="form-control"
                                 name="mobile"
                                 pattern="[0-9]{10}"
+                                value="{{ request.form.mobile }}"
                                 required
                                 placeholder="10-digit mobile number">
                         </div>
@@ -43,6 +45,7 @@
                             type="email"
                             class="form-control"
                             name="email"
+                            value="{{ request.form.email }}"
                             required
                             placeholder="Enter your email">
                     </div>
@@ -55,7 +58,7 @@
                             name="address"
                             rows="3"
                             required
-                            placeholder="Enter your address"></textarea>
+                            placeholder="Enter your address">{{ request.form.address }}</textarea>
                     </div>
 
                     <!-- Password -->
