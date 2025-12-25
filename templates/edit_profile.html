@@ -3,78 +3,93 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-body p-5">
 
-                <h2 class="mb-4">Edit Profile</h2>
+                <h2 class="text-center mb-4">Edit Profile</h2>
 
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-info">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-                {% endwith %}
+                <!-- IMPORTANT: multipart for photo upload -->
+                <form method="POST" 
+                      action="{{ url_for('edit_profile') }}" 
+                      enctype="multipart/form-data">
 
-                <form method="POST">
-                    
+                    <!-- Profile Photo -->
+                    <div class="text-center mb-4">
+                        {% if session.photo %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ session.photo) }}"
+                                 class="rounded-circle shadow mb-3"
+                                 width="120"
+                                 height="120"
+                                 style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center shadow mb-3"
+                                 style="width:120px; height:120px;">
+                                <h2 class="text-primary mb-0">
+                                    {{ session.name[0] if session.name else 'U' }}
+                                </h2>
+                            </div>
+                        {% endif %}
+
+                        <input type="file"
+                               class="form-control mt-2"
+                               name="photo"
+                               accept="image/*">
+                        <small class="text-muted">
+                            JPG / PNG only (optional)
+                        </small>
+                    </div>
+
                     <!-- Full Name -->
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            class="form-control"
-                            value="{{ session.name }}"
-                            required
-                        >
+                        <input type="text"
+                               class="form-control"
+                               name="name"
+                               value="{{ session.name }}"
+                               required>
                     </div>
 
-                    <!-- Mobile -->
+                    <!-- Mobile (Readonly) -->
                     <div class="mb-3">
                         <label class="form-label">Mobile Number</label>
-                        <input
-                            type="text"
-                            name="mobile"
-                            class="form-control"
-                            value="{{ session.mobile }}"
-                            required
-                        >
+                        <input type="text"
+                               class="form-control"
+                               value="{{ session.mobile }}"
+                               readonly>
+                        <small class="text-muted">
+                            Mobile number cannot be changed
+                        </small>
                     </div>
 
                     <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label">Email Address</label>
-                        <input
-                            type="email"
-                            name="email"
-                            class="form-control"
-                            value="{{ session.email }}"
-                            required
-                        >
+                        <input type="email"
+                               class="form-control"
+                               name="email"
+                               value="{{ session.email }}"
+                               required>
                     </div>
 
                     <!-- Address -->
                     <div class="mb-4">
                         <label class="form-label">Address</label>
-                        <textarea
-                            name="address"
-                            class="form-control"
-                            rows="3"
-                            required
-                        >{{ session.address }}</textarea>
+                        <textarea class="form-control"
+                                  name="address"
+                                  rows="4"
+                                  required>{{ session.address }}</textarea>
                     </div>
 
                     <!-- Buttons -->
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Update Profile
+                        </button>
+                        <a href="{{ url_for('profile') }}"
+                           class="btn btn-outline-secondary">
                             Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            Save Changes
-                        </button>
                     </div>
 
                 </form>
