@@ -20,18 +20,16 @@ app.wsgi_app = ProxyFix(
 )
 
 # ---------------- SECRET KEY ----------------
+# 👉 YAHAN PE CHANGE KAR SAKTE HO (OPTIONAL)
 app.secret_key = os.getenv(
     "SECRET_KEY",
-    "4f9ba36ac6f76ca4e0b64a1538abd079"
+    "YAHAN_PE_SECRET_KEY_DALO"
 )
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
     return psycopg.connect(
-        os.getenv(
-            "DATABASE_URL",
-            "postgresql://bite_me_buddy_user:6Mb7axQ89EkOQTQnqw6shT5CaO2lFY1Z@dpg-d536f8khg0os738kuhm0-a/bite_me_buddy"
-        ),
+        os.getenv("DATABASE_URL"),
         sslmode="require"
     )
 
@@ -167,9 +165,8 @@ def check_status():
     except Exception as e:
         return f"Database error: {e}"
 
-# ---------------- INIT ----------------
-with app.app_context():
-    create_tables()
+# ---------------- INIT (IMPORTANT) ----------------
+create_tables()
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
