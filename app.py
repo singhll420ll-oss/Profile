@@ -20,7 +20,6 @@ app.wsgi_app = ProxyFix(
 )
 
 # ---------------- SECRET KEY ----------------
-# 👉 Render ENV me SECRET_KEY set karo
 app.secret_key = os.getenv("SECRET_KEY", "DEV_SECRET_CHANGE_ME")
 
 # ---------------- DATABASE ----------------
@@ -28,7 +27,6 @@ def get_db_connection():
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
         raise Exception("DATABASE_URL not set in environment variables")
-
     return psycopg.connect(db_url, sslmode="require")
 
 def create_tables():
@@ -56,7 +54,7 @@ def hash_password(password: str) -> str:
 def home():
     return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
 
-# ---------------- INIT DB (RUN ONCE) ----------------
+# ---------------- INIT DB ----------------
 @app.route('/init-db')
 def init_db():
     create_tables()
@@ -66,7 +64,7 @@ def init_db():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        mobile = request.form.get('mobile_number')
+        mobile = request.form.get('mobile')   # ✅ FIXED
         password = hash_password(request.form.get('password'))
 
         try:
@@ -105,7 +103,11 @@ def register():
             flash("Passwords do not match", "error")
             return render_template('register.html')
 
-        mobile = request.form.get('mobile_number')
+        mobile = request.form.get('mobile')   # ✅ FIXED
+
+        if not mobile:
+            flash("Mobile number is required", "error")
+            return render_template('register.html')
 
         try:
             with get_db_connection() as conn:
