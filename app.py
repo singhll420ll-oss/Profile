@@ -1,12 +1,11 @@
 import os
 import psycopg
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
-# Load env
 load_dotenv()
 
 app = Flask(__name__)
@@ -16,7 +15,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 UPLOAD_FOLDER = "static/uploads/profile"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
-MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
+MAX_FILE_SIZE = 2 * 1024 * 1024
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE
@@ -26,18 +25,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # ================= DATABASE =================
 
 def get_db_connection():
-    database_url = os.environ.get("DATABASE_URL")
-
-    if not database_url:
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
         raise ValueError("DATABASE_URL not set")
 
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-    return psycopg.connect(
-        database_url,
-        sslmode="require"
-    )
+    return psycopg.connect(db_url, sslmode="require")
 
 def init_db():
     conn = get_db_connection()
@@ -66,21 +61,21 @@ def get_user_by_mobile(mobile):
         cur.execute("SELECT * FROM users WHERE mobile=%s", (mobile,))
         row = cur.fetchone()
         if row:
-            columns = [d[0] for d in cur.description]
+            cols = [d[0] for d in cur.description]
             conn.close()
-            return dict(zip(columns, row))
+            return dict(zip(cols, row))
     conn.close()
     return None
 
-def get_user_by_id(user_id):
+def get_user_by_id(uid):
     conn = get_db_connection()
     with conn.cursor() as cur:
-        cur.execute("SELECT * FROM users WHERE id=%s", (user_id,))
+        cur.execute("SELECT * FROM users WHERE id=%s", (uid,))
         row = cur.fetchone()
         if row:
-            columns = [d[0] for d in cur.description]
+            cols = [d[0] for d in cur.description]
             conn.close()
-            return dict(zip(columns, row))
+            return dict(zip(cols, row))
     conn.close()
     return None
 
@@ -90,6 +85,7 @@ def get_user_by_id(user_id):
 def home():
     return redirect(url_for("profile")) if "user_id" in session else redirect(url_for("login"))
 
+# ---------- REGISTER (AUTO LOGO SET) ----------
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if "user_id" in session:
@@ -117,11 +113,20 @@ def register():
 
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Create user
             cur.execute(
                 "INSERT INTO users (name, mobile, password) VALUES (%s,%s,%s) RETURNING id",
                 (name, mobile, hashed)
             )
             user_id = cur.fetchone()[0]
+
+            # 🔥 AUTO LOGO = USER ID
+            default_logo = f"profile/user_{user_id}.png"
+            cur.execute(
+                "UPDATE users SET profile_photo=%s WHERE id=%s",
+                (default_logo, user_id)
+            )
+
             conn.commit()
         conn.close()
 
@@ -130,6 +135,7 @@ def register():
 
     return render_template("register.html")
 
+# ---------- LOGIN ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
@@ -148,6 +154,7 @@ def login():
 
     return render_template("login.html")
 
+# ---------- PROFILE ----------
 @app.route("/profile")
 def profile():
     if "user_id" not in session:
@@ -155,13 +162,15 @@ def profile():
 
     user = get_user_by_id(session["user_id"])
 
-    if user.get("profile_photo"):
-        user["profile_photo"] = url_for("static", filename=user["profile_photo"])
+    photo = user.get("profile_photo")
+    if photo:
+        user["profile_photo"] = url_for("static", filename=photo)
     else:
         user["profile_photo"] = url_for("static", filename="img/default-avatar.png")
 
     return render_template("profile.html", user=user)
 
+# ---------- EDIT PROFILE (CHANGE LOGO) ----------
 @app.route("/edit-profile", methods=["GET", "POST"])
 def edit_profile():
     if "user_id" not in session:
@@ -172,17 +181,17 @@ def edit_profile():
     if request.method == "POST":
         name = request.form.get("name")
         mobile = request.form.get("mobile")
-
         profile_photo = user["profile_photo"]
 
         if "profile_photo" in request.files:
             file = request.files["profile_photo"]
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                new_name = f"{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-                path = os.path.join(UPLOAD_FOLDER, new_name)
+                fname = secure_filename(file.filename)
+                new_name = f"profile/user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{fname}"
+                path = os.path.join("static/uploads", new_name)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
                 file.save(path)
-                profile_photo = f"uploads/profile/{new_name}"
+                profile_photo = new_name
 
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -199,20 +208,11 @@ def edit_profile():
 
     return render_template("edit_profile.html", user=user)
 
+# ---------- LOGOUT ----------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
-# ================= ERRORS =================
-
-@app.errorhandler(404)
-def not_found(e):
-    return render_template("404.html"), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    return render_template("500.html"), 500
 
 # ================= STARTUP =================
 
