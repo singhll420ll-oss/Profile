@@ -1,107 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Register - Bite Me Buddy{% endblock %}
+
+{% block title %}Register{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card">
-            <div class="card-body p-5">
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1><i class="fas fa-user-plus"></i> Register</h1>
+            <p>Create your account</p>
+        </div>
 
-                <h2 class="text-center mb-4">Create Account</h2>
-
-                <form method="POST" action="{{ url_for('register') }}">
-
-                    <!-- Full Name & Mobile -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Full Name</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                name="name"
-                                value="{{ request.form.name }}"
-                                required
-                                placeholder="Enter your full name">
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mobile Number</label>
-                            <!-- ✅ MUST MATCH app.py -->
-                            <input
-                                type="tel"
-                                class="form-control"
-                                name="mobile"
-                                pattern="[0-9]{10}"
-                                value="{{ request.form.mobile }}"
-                                required
-                                placeholder="10-digit mobile number">
-                        </div>
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label class="form-label">Email Address</label>
-                        <input
-                            type="email"
-                            class="form-control"
-                            name="email"
-                            value="{{ request.form.email }}"
-                            required
-                            placeholder="Enter your email">
-                    </div>
-
-                    <!-- Address -->
-                    <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea
-                            class="form-control"
-                            name="address"
-                            rows="3"
-                            required
-                            placeholder="Enter your address">{{ request.form.address }}</textarea>
-                    </div>
-
-                    <!-- Password -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Password</label>
-                            <input
-                                type="password"
-                                class="form-control"
-                                name="password"
-                                required
-                                placeholder="Create password">
-                        </div>
-
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label">Confirm Password</label>
-                            <input
-                                type="password"
-                                class="form-control"
-                                name="confirm_password"
-                                required
-                                placeholder="Confirm password">
-                        </div>
-                    </div>
-
-                    <!-- Submit -->
-                    <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Register
-                        </button>
-                    </div>
-
-                    <!-- Login -->
-                    <div class="text-center">
-                        <p>
-                            Already have an account?
-                            <a href="{{ url_for('login') }}">Login here</a>
-                        </p>
-                    </div>
-
-                </form>
-
+        <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+            <div class="form-group">
+                <label for="name">
+                    <i class="fas fa-user"></i> Full Name
+                </label>
+                <input type="text" id="name" name="name" 
+                       placeholder="Enter your full name" required>
             </div>
+
+            <div class="form-group">
+                <label for="mobile">
+                    <i class="fas fa-mobile-alt"></i> Mobile Number
+                </label>
+                <input type="tel" id="mobile" name="mobile" 
+                       placeholder="Enter your mobile number" 
+                       pattern="[0-9]{10,15}" 
+                       title="10-15 digit mobile number"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <input type="password" id="password" name="password" 
+                       placeholder="Create a password (min. 6 characters)" 
+                       minlength="6" required>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">
+                    <i class="fas fa-lock"></i> Confirm Password
+                </label>
+                <input type="password" id="confirm_password" name="confirm_password" 
+                       placeholder="Confirm your password" 
+                       minlength="6" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-user-plus"></i> Register
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account? 
+                <a href="{{ url_for('login') }}">Login here</a>
+            </p>
         </div>
     </div>
 </div>
