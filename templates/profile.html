@@ -20,20 +20,32 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <!-- Avatar -->
+                <div class="row align-items-center">
+
+                    <!-- Profile Photo / Initial -->
                     <div class="col-md-4 text-center mb-4">
-                        <div class="bg-light rounded-circle p-4 d-inline-block">
-                            <h1 class="display-4 text-primary">
-                                {{ session.name[0] if session.name else 'U' }}
-                            </h1>
-                        </div>
+
+                        {% if session.photo %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ session.photo) }}"
+                                 class="rounded-circle shadow"
+                                 width="130"
+                                 height="130"
+                                 style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center shadow"
+                                 style="width:130px; height:130px;">
+                                <h1 class="display-4 text-primary mb-0">
+                                    {{ session.name[0] if session.name else 'U' }}
+                                </h1>
+                            </div>
+                        {% endif %}
+
                     </div>
 
-                    <!-- Details -->
+                    <!-- Profile Details -->
                     <div class="col-md-8">
                         <div class="table-responsive">
-                            <table class="table table-borderless">
+                            <table class="table table-borderless align-middle">
                                 <tbody>
                                     <tr>
                                         <th width="35%">Full Name:</th>
@@ -61,6 +73,7 @@
                             </table>
                         </div>
                     </div>
+
                 </div>
 
             </div>
