@@ -1,87 +1,103 @@
 {% extends "base.html" %}
 {% block title %}Register - Bite Me Buddy{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-body p-5">
+
                 <h2 class="text-center mb-4">Create Account</h2>
 
                 <form method="POST" action="{{ url_for('register') }}">
 
+                    <!-- Full Name & Mobile -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Full Name</label>
-                            <input type="text"
-                                   class="form-control"
-                                   name="name"
-                                   required
-                                   placeholder="Enter your full name">
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="name"
+                                required
+                                placeholder="Enter your full name">
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Mobile Number</label>
-                            <!-- 🔥 FIXED LINE -->
-                            <input type="tel"
-                                   class="form-control"
-                                   name="mobile_number"
-                                   pattern="[0-9]{10}"
-                                   required
-                                   placeholder="10-digit number">
+                            <!-- ✅ FINAL FIX -->
+                            <input
+                                type="tel"
+                                class="form-control"
+                                name="mobile"
+                                pattern="[0-9]{10}"
+                                required
+                                placeholder="10-digit mobile number">
                         </div>
                     </div>
 
+                    <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label">Email Address</label>
-                        <input type="email"
-                               class="form-control"
-                               name="email"
-                               required
-                               placeholder="Enter your email">
+                        <input
+                            type="email"
+                            class="form-control"
+                            name="email"
+                            required
+                            placeholder="Enter your email">
                     </div>
 
+                    <!-- Address -->
                     <div class="mb-3">
                         <label class="form-label">Address</label>
-                        <textarea class="form-control"
-                                  name="address"
-                                  rows="3"
-                                  required
-                                  placeholder="Enter your address"></textarea>
+                        <textarea
+                            class="form-control"
+                            name="address"
+                            rows="3"
+                            required
+                            placeholder="Enter your address"></textarea>
                     </div>
 
+                    <!-- Password -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Password</label>
-                            <input type="password"
-                                   class="form-control"
-                                   name="password"
-                                   required
-                                   placeholder="Create password">
+                            <input
+                                type="password"
+                                class="form-control"
+                                name="password"
+                                required
+                                placeholder="Create password">
                         </div>
 
                         <div class="col-md-6 mb-4">
                             <label class="form-label">Confirm Password</label>
-                            <input type="password"
-                                   class="form-control"
-                                   name="confirm_password"
-                                   required
-                                   placeholder="Confirm password">
+                            <input
+                                type="password"
+                                class="form-control"
+                                name="confirm_password"
+                                required
+                                placeholder="Confirm password">
                         </div>
                     </div>
 
+                    <!-- Submit -->
                     <div class="d-grid mb-3">
                         <button type="submit" class="btn btn-primary btn-lg">
                             Register
                         </button>
                     </div>
 
+                    <!-- Login -->
                     <div class="text-center">
-                        <p>Already have an account?
+                        <p>
+                            Already have an account?
                             <a href="{{ url_for('login') }}">Login here</a>
                         </p>
                     </div>
 
                 </form>
+
             </div>
         </div>
     </div>
