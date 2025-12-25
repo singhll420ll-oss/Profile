@@ -1,42 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Edit Profile - Bite Me Buddy{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-md-8">
         <div class="card">
             <div class="card-body p-5">
-                <h2 class="text-center mb-4">Edit Profile</h2>
-                <form method="POST" action="{{ url_for('edit_profile') }}">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name" 
-                               value="{{ session.name }}" required>
-                    </div>
+
+                <h2 class="mb-4">Edit Profile</h2>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form method="POST">
                     
+                    <!-- Full Name -->
                     <div class="mb-3">
-                        <label for="mobile_number" class="form-label">Mobile Number</label>
-                        <input type="text" class="form-control" id="mobile_number" 
-                               value="{{ session.mobile_number }}" readonly>
-                        <small class="text-muted">Mobile number cannot be changed</small>
+                        <label class="form-label">Full Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            value="{{ session.name }}"
+                            required
+                        >
                     </div>
-                    
+
+                    <!-- Mobile -->
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" 
-                               value="{{ session.email }}" required>
+                        <label class="form-label">Mobile Number</label>
+                        <input
+                            type="text"
+                            name="mobile"
+                            class="form-control"
+                            value="{{ session.mobile }}"
+                            required
+                        >
                     </div>
-                    
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            name="email"
+                            class="form-control"
+                            value="{{ session.email }}"
+                            required
+                        >
+                    </div>
+
+                    <!-- Address -->
                     <div class="mb-4">
-                        <label for="address" class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" 
-                                  rows="4" required>{{ session.address }}</textarea>
+                        <label class="form-label">Address</label>
+                        <textarea
+                            name="address"
+                            class="form-control"
+                            rows="3"
+                            required
+                        >{{ session.address }}</textarea>
                     </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
-                        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">Cancel</a>
+
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Save Changes
+                        </button>
                     </div>
+
                 </form>
+
             </div>
         </div>
     </div>
