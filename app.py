@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 import psycopg
 import os
 from dotenv import load_dotenv
@@ -22,6 +23,11 @@ app.wsgi_app = ProxyFix(
 # ---------------- SECRET KEY ----------------
 app.secret_key = os.getenv("SECRET_KEY", "DEV_SECRET_CHANGE_ME")
 
+# ---------------- UPLOAD CONFIG ----------------
+UPLOAD_FOLDER = "static/uploads/profile"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
 # ---------------- DATABASE ----------------
 def get_db_connection():
     db_url = os.getenv("DATABASE_URL")
@@ -32,7 +38,6 @@ def get_db_connection():
 def create_tables():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            # USERS TABLE
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -51,13 +56,16 @@ def create_tables():
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ---------------- INIT DB (AUTO) ----------------
-create_tables()
-
 # ---------------- HOME ----------------
 @app.route('/')
 def home():
     return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
+
+# ---------------- INIT DB ----------------
+@app.route('/init-db')
+def init_db():
+    create_tables()
+    return "✅ Database initialized successfully"
 
 # ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET', 'POST'])
@@ -72,31 +80,27 @@ def login():
 
         password = hash_password(password)
 
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        SELECT id, name, mobile, email, address, photo
-                        FROM users
-                        WHERE mobile=%s AND password=%s
-                    """, (mobile, password))
-                    user = cur.fetchone()
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, name, mobile, email, address, photo
+                    FROM users
+                    WHERE mobile=%s AND password=%s
+                """, (mobile, password))
+                user = cur.fetchone()
 
-            if user:
-                session['user_id'] = user[0]
-                session['name'] = user[1]
-                session['mobile'] = user[2]
-                session['email'] = user[3]
-                session['address'] = user[4]
-                session['photo'] = user[5]
+        if user:
+            session['user_id'] = user[0]
+            session['name'] = user[1]
+            session['mobile'] = user[2]
+            session['email'] = user[3]
+            session['address'] = user[4]
+            session['photo'] = user[5]
 
-                flash("Login successful", "success")
-                return redirect(url_for('profile'))
+            flash("Login successful", "success")
+            return redirect(url_for('profile'))
 
-            flash("Invalid mobile or password", "error")
-
-        except Exception as e:
-            flash(str(e), "error")
+        flash("Invalid login details", "error")
 
     return render_template('login.html')
 
@@ -104,7 +108,6 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-
         name = request.form.get('name')
         mobile = request.form.get('mobile')
         email = request.form.get('email')
@@ -112,43 +115,31 @@ def register():
         password = request.form.get('password')
         confirm = request.form.get('confirm_password')
 
-        if not mobile:
-            flash("Mobile number is required", "error")
-            return render_template('register.html')
-
         if password != confirm:
             flash("Passwords do not match", "error")
             return render_template('register.html')
 
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT id FROM users WHERE mobile=%s", (mobile,))
-                    if cur.fetchone():
-                        flash("Mobile already registered", "error")
-                        return render_template('register.html')
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO users (name, mobile, email, address, password)
+                    VALUES (%s,%s,%s,%s,%s)
+                    RETURNING id
+                """, (name, mobile, email, address, hash_password(password)))
+                user_id = cur.fetchone()[0]
+            conn.commit()
 
-                    cur.execute("""
-                        INSERT INTO users (name, mobile, email, address, password)
-                        VALUES (%s, %s, %s, %s, %s)
-                        RETURNING id
-                    """, (name, mobile, email, address, hash_password(password)))
+        session.update({
+            'user_id': user_id,
+            'name': name,
+            'mobile': mobile,
+            'email': email,
+            'address': address,
+            'photo': None
+        })
 
-                    user_id = cur.fetchone()[0]
-                conn.commit()
-
-            session['user_id'] = user_id
-            session['name'] = name
-            session['mobile'] = mobile
-            session['email'] = email
-            session['address'] = address
-            session['photo'] = None
-
-            flash("Registration successful", "success")
-            return redirect(url_for('profile'))
-
-        except Exception as e:
-            flash(str(e), "error")
+        flash("Registration successful", "success")
+        return redirect(url_for('profile'))
 
     return render_template('register.html')
 
@@ -170,25 +161,33 @@ def edit_profile():
         email = request.form.get('email')
         address = request.form.get('address')
 
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        UPDATE users
-                        SET name=%s, email=%s, address=%s
-                        WHERE id=%s
-                    """, (name, email, address, session['user_id']))
-                conn.commit()
+        photo_file = request.files.get('photo')
+        photo_filename = session.get('photo')
 
-            session['name'] = name
-            session['email'] = email
-            session['address'] = address
+        if photo_file and photo_file.filename:
+            filename = secure_filename(photo_file.filename)
+            photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            photo_file.save(photo_path)
+            photo_filename = filename
 
-            flash("Profile updated successfully", "success")
-            return redirect(url_for('profile'))
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE users
+                    SET name=%s, email=%s, address=%s, photo=%s
+                    WHERE id=%s
+                """, (name, email, address, photo_filename, session['user_id']))
+            conn.commit()
 
-        except Exception as e:
-            flash(str(e), "error")
+        session.update({
+            'name': name,
+            'email': email,
+            'address': address,
+            'photo': photo_filename
+        })
+
+        flash("Profile updated successfully", "success")
+        return redirect(url_for('profile'))
 
     return render_template('edit_profile.html')
 
@@ -198,17 +197,6 @@ def logout():
     session.clear()
     flash("Logged out successfully", "success")
     return redirect(url_for('login'))
-
-# ---------------- HEALTH CHECK ----------------
-@app.route('/check-status')
-def check_status():
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1")
-        return "✅ Database connection OK"
-    except Exception as e:
-        return f"❌ Database error: {e}"
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
