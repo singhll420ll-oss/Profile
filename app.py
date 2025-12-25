@@ -20,23 +20,16 @@ app.wsgi_app = ProxyFix(
 )
 
 # ---------------- SECRET KEY ----------------
-# 👉 YAHAN PE FILL KAR SAKTE HO YA RENDER ENV USE KARO
-app.secret_key = os.getenv(
-    "SECRET_KEY",
-    "YAHAN_PE_SECRET_KEY_DALO"
-)
+# 👉 Render ENV me SECRET_KEY set karo
+app.secret_key = os.getenv("SECRET_KEY", "DEV_SECRET_CHANGE_ME")
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
     db_url = os.getenv("DATABASE_URL")
-
     if not db_url:
-        raise Exception("DATABASE_URL missing in environment variables")
+        raise Exception("DATABASE_URL not set in environment variables")
 
-    return psycopg.connect(
-        db_url,
-        sslmode="require"
-    )
+    return psycopg.connect(db_url, sslmode="require")
 
 def create_tables():
     with get_db_connection() as conn:
@@ -62,6 +55,12 @@ def hash_password(password: str) -> str:
 @app.route('/')
 def home():
     return redirect(url_for('profile')) if 'user_id' in session else redirect(url_for('login'))
+
+# ---------------- INIT DB (RUN ONCE) ----------------
+@app.route('/init-db')
+def init_db():
+    create_tables()
+    return "✅ Database initialized successfully"
 
 # ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET', 'POST'])
@@ -166,12 +165,9 @@ def check_status():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
-        return "Database connection successful!"
+        return "✅ Database connection OK"
     except Exception as e:
-        return f"Database error: {e}"
-
-# ---------------- INIT ----------------
-create_tables()
+        return f"❌ Database error: {e}"
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
