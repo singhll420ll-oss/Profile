@@ -1,55 +1,58 @@
 {% extends "base.html" %}
+
 {% block title %}Login - Bite Me Buddy{% endblock %}
 
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-lg p-4" style="max-width: 420px; width: 100%; border-radius: 16px;">
-        <h2 class="text-center mb-4">Login</h2>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card">
+            <div class="card-body p-5">
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+                <h2 class="text-center mb-4">Login</h2>
 
-        <!-- LOGIN FORM -->
-        <form method="POST" action="/login">
+                <form method="POST" action="{{ url_for('login') }}">
 
-            <div class="mb-3">
-                <label class="form-label">Mobile Number</label>
-                <input type="tel"
-                       class="form-control"
-                       name="mobile"
-                       placeholder="10-digit mobile number"
-                       pattern="[0-9]{10}"
-                       required>
+                    <!-- Mobile Number -->
+                    <div class="mb-3">
+                        <label class="form-label">Mobile Number</label>
+                        <input
+                            type="tel"
+                            class="form-control"
+                            name="mobile"
+                            placeholder="Enter 10-digit mobile number"
+                            pattern="[0-9]{10}"
+                            required>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label class="form-label">Password</label>
+                        <input
+                            type="password"
+                            class="form-control"
+                            name="password"
+                            placeholder="Enter password"
+                            required>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Login
+                        </button>
+                    </div>
+
+                    <!-- Register -->
+                    <div class="text-center">
+                        <p class="mb-0">
+                            Don't have an account?
+                            <a href="{{ url_for('register') }}">Register here</a>
+                        </p>
+                    </div>
+
+                </form>
+
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password"
-                       class="form-control"
-                       name="password"
-                       placeholder="Enter password"
-                       required>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2">
-                Login
-            </button>
-        </form>
-
-        <div class="text-center mt-3">
-            <p class="mb-0">
-                Don’t have an account?
-                <a href="/register">Register here</a>
-            </p>
         </div>
     </div>
 </div>
