@@ -1,94 +1,119 @@
 {% extends "base.html" %}
-{% block title %}Edit Profile - Bite Me Buddy{% endblock %}
+
+{% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card">
-            <div class="card-body p-5">
-
-                <h3 class="text-center mb-4">Edit Profile</h3>
-
-                <!-- 🔹 FORM -->
-                <form method="POST"
-                      action="{{ url_for('edit_profile') }}"
-                      enctype="multipart/form-data">
-
-                    <!-- 👤 PROFILE PHOTO -->
-                    <div class="text-center mb-4">
-                        <img
-                            src="{{ url_for('static', filename='uploads/profile/' + (user.profile_photo or 'default.png')) }}"
-                            class="rounded-circle mb-2"
-                            width="120"
-                            height="120"
-                            style="object-fit: cover;"
-                        >
-                        <div class="mt-2">
-                            <input type="file"
-                                   name="profile_photo"
-                                   class="form-control"
-                                   accept="image/*">
-                        </div>
-                        <small class="text-muted">
-                            JPG / PNG only • Max 2MB
-                        </small>
-                    </div>
-
-                    <!-- FULL NAME -->
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text"
-                               class="form-control"
-                               name="name"
-                               value="{{ user.name }}"
-                               required>
-                    </div>
-
-                    <!-- MOBILE NUMBER -->
-                    <div class="mb-3">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="tel"
-                               class="form-control"
-                               name="mobile_number"
-                               value="{{ user.mobile_number }}"
-                               pattern="[0-9]{10}"
-                               required>
-                    </div>
-
-                    <!-- EMAIL (READ ONLY) -->
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email"
-                               class="form-control"
-                               value="{{ user.email }}"
-                               readonly>
-                    </div>
-
-                    <!-- ADDRESS -->
-                    <div class="mb-4">
-                        <label class="form-label">Address</label>
-                        <textarea class="form-control"
-                                  name="address"
-                                  rows="3"
-                                  required>{{ user.address }}</textarea>
-                    </div>
-
-                    <!-- SAVE BUTTON -->
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Save Changes
-                        </button>
-                    </div>
-
-                    <!-- BACK -->
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('profile') }}">← Back to Profile</a>
-                    </div>
-
-                </form>
-
-            </div>
+<div class="edit-profile-container">
+    <div class="edit-profile-card">
+        <div class="edit-profile-header">
+            <h1><i class="fas fa-user-edit"></i> Edit Profile</h1>
+            <p>Update your information</p>
         </div>
+
+        <form method="POST" action="{{ url_for('edit_profile') }}" 
+              enctype="multipart/form-data" class="edit-profile-form">
+            
+            <div class="form-section">
+                <h3><i class="fas fa-user"></i> Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" 
+                           value="{{ user.name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="mobile">Mobile Number</label>
+                    <input type="tel" id="mobile" name="mobile" 
+                           value="{{ user.mobile }}" 
+                           pattern="[0-9]{10,15}" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><i class="fas fa-camera"></i> Profile Photo</h3>
+                
+                <div class="current-photo">
+                    <img src="{{ user.profile_photo or url_for('static', filename='img/default-avatar.png') }}" 
+                         alt="Current Photo" 
+                         class="profile-photo-preview"
+                         onerror="this.src='{{ url_for('static', filename='img/default-avatar.png') }}'">
+                    <p>Current Profile Photo</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="profile_photo">Upload New Photo</label>
+                    <div class="file-upload">
+                        <input type="file" id="profile_photo" name="profile_photo" 
+                               accept="image/*" 
+                               onchange="previewImage(this)">
+                        <label for="profile_photo" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i> Choose File
+                        </label>
+                        <span class="file-name">No file chosen</span>
+                    </div>
+                    <small class="help-text">
+                        Allowed formats: JPG, PNG, GIF. Max size: 2MB
+                    </small>
+                </div>
+
+                <div class="image-preview" id="imagePreview">
+                    <img src="" alt="Image Preview" class="image-preview__image">
+                    <span class="image-preview__default-text">Image Preview</span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('profile') }}" class="btn btn-cancel">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const previewImage = preview.querySelector('.image-preview__image');
+    const defaultText = preview.querySelector('.image-preview__default-text');
+    const fileName = input.files[0] ? input.files[0].name : 'No file chosen';
+    
+    document.querySelector('.file-name').textContent = fileName;
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewImage.style.display = 'block';
+            defaultText.style.display = 'none';
+            preview.style.display = 'flex';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        previewImage.style.display = 'none';
+        defaultText.style.display = 'block';
+    }
+}
+
+// Show current photo in preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPhoto = document.querySelector('.profile-photo-preview').src;
+    if (currentPhoto && !currentPhoto.includes('default-avatar.png')) {
+        const preview = document.getElementById('imagePreview');
+        const previewImage = preview.querySelector('.image-preview__image');
+        const defaultText = preview.querySelector('.image-preview__default-text');
+        
+        previewImage.src = currentPhoto;
+        previewImage.style.display = 'block';
+        defaultText.style.display = 'none';
+        preview.style.display = 'flex';
+    }
+});
+</script>
 {% endblock %}
