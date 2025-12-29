@@ -46,6 +46,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,  -- ✅ Email field added
                 mobile VARCHAR(15) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 profile_photo VARCHAR(255),
@@ -64,6 +65,18 @@ def get_user_by_mobile(mobile):
     conn = get_db_connection()
     with conn.cursor() as cur:
         cur.execute("SELECT * FROM users WHERE mobile=%s", (mobile,))
+        row = cur.fetchone()
+        if row:
+            columns = [d[0] for d in cur.description]
+            conn.close()
+            return dict(zip(columns, row))
+    conn.close()
+    return None
+
+def get_user_by_email(email):  # ✅ New helper function for email
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
         row = cur.fetchone()
         if row:
             columns = [d[0] for d in cur.description]
@@ -97,11 +110,12 @@ def register():
 
     if request.method == "POST":
         name = request.form.get("name")
+        email = request.form.get("email")  # ✅ Email field added
         mobile = request.form.get("mobile")
         password = request.form.get("password")
         confirm = request.form.get("confirm_password")
 
-        if not name or not mobile or not password:
+        if not name or not email or not mobile or not password:  # ✅ Email check added
             flash("All fields required", "error")
             return render_template("register.html")
 
@@ -109,6 +123,12 @@ def register():
             flash("Passwords do not match", "error")
             return render_template("register.html")
 
+        # ✅ Check if email already exists
+        if get_user_by_email(email):
+            flash("Email already registered", "error")
+            return render_template("register.html")
+
+        # ✅ Check if mobile already exists
         if get_user_by_mobile(mobile):
             flash("Mobile already registered", "error")
             return render_template("register.html")
@@ -118,8 +138,8 @@ def register():
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO users (name, mobile, password) VALUES (%s,%s,%s) RETURNING id",
-                (name, mobile, hashed)
+                "INSERT INTO users (name, email, mobile, password) VALUES (%s,%s,%s,%s) RETURNING id",  # ✅ Email added
+                (name, email, mobile, hashed)
             )
             user_id = cur.fetchone()[0]
             conn.commit()
@@ -172,6 +192,7 @@ def edit_profile():
     if request.method == "POST":
         name = request.form.get("name")
         mobile = request.form.get("mobile")
+        email = request.form.get("email")  # ✅ Email field added for editing
 
         profile_photo = user["profile_photo"]
 
@@ -188,9 +209,9 @@ def edit_profile():
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE users
-                SET name=%s, mobile=%s, profile_photo=%s
+                SET name=%s, email=%s, mobile=%s, profile_photo=%s  # ✅ Email added
                 WHERE id=%s
-            """, (name, mobile, profile_photo, session["user_id"]))
+            """, (name, email, mobile, profile_photo, session["user_id"]))
             conn.commit()
         conn.close()
 
