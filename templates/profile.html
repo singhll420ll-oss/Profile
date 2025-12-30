@@ -13,8 +13,14 @@
                      onerror="this.src='{{ url_for('static', filename='img/default-avatar.png') }}'">
             </div>
             <h1>{{ user.name }}</h1>
+
             <p class="mobile-number">
                 <i class="fas fa-mobile-alt"></i> {{ user.mobile }}
+            </p>
+
+            <!-- Email Section -->
+            <p class="email-id">
+                <i class="fas fa-envelope"></i> {{ user.email }}
             </p>
         </div>
 
